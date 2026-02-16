@@ -1,5 +1,5 @@
 ---
-title: "Trabajo Final 9219"
+title: "Proyecto final 9219 <br> Michoacán: una exploracion demográfica"
 author: 
   - "Salvador Halave Cubillo"
   - "Angel Gabriel Camacho Cruz"
@@ -7,13 +7,19 @@ format: pdf
 editor: visual
 ---
 
-## Quarto
+## Introduccion
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+Michoacán se siente como varios estados en uno: hacia las zonas altas del centro y el oriente el aire es más frío y el paisaje es de montaña y bosques; en cambio, al bajar hacia la costa y la Tierra Caliente el clima se vuelve más cálido, con ritmos de vida y actividades económicas distintas. Esa mezcla de regiones influye en cómo se asienta la gente: dónde se concentran los servicios, qué tan dispersas están las comunidades y cómo cambian las necesidades de escuela, empleo y salud según el lugar.
 
-## Running Code
+En la demografía, el clima también se nota indirectamente: en áreas más frías y elevadas suelen aparecer municipios con poblaciones más dispersas, mientras que en las zonas más cálidas se observan corredores y localidades donde la movilidad es más constante por trabajo agrícola, comercio o conexión con rutas regionales. Por eso, una pirámide poblacional de Michoacán no solo describe edades: ayuda a imaginar qué tipo de territorio hay detrás (rural o urbano, disperso o concentrado) y cómo eso puede reflejarse en nacimientos, envejecimiento o crecimiento.
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+Y hay otro componente que puede dejar huella en las pirámides: la migración y la violencia en ciertos periodos y ciudades. Cuando una zona vive picos de emigración, a veces se “adelgazan” grupos específicos (por ejemplo, jóvenes adultos que salen a buscar oportunidades); y cuando hay episodios de inseguridad, pueden aparecer franjas o huecos por desplazamientos y pérdidas que afectan más a ciertas edades y, a veces, a un sexo en particular. Con esa idea, la pirámide de Michoacán se vuelve una historia visual: no solo quiénes viven ahí, sino cómo el territorio y los eventos sociales pueden moldear la forma de su población.
+
+
+
+## Lectura del primer objeto de la web
+
+Lectura de la tabla de poblacion mitad de año de las estimaciones-proyeciones de poblacion de Mexico a mitad de año desde 1950 hasta 2070.
 
 ```{r}
 # 1. Remover los objetos
@@ -25,23 +31,100 @@ rm(list = ls())
 library(data.table)
 
 # 3. Descargar tablas de datos
-#pop <- fread("https://repodatos.atdt.gob.mx/CONAPO/proyecciones/00_Pob_Mitad_1950_2070.csv")
-pop <- fread("D:/ArchivosUNAM/6to Semestre/Demografia/Tarea1/00_Pob_Mitad_1950_2070.csv")
+pop<-fread("D:/ArchivosUNAM/6to Semestre/00_Pob_Mitad_1950_2070.csv")
+#pop<-fread("https://repodatos.atdt.gob.mx/CONAPO
+#/proyecciones/00_Pob_Mitad_1950_2070.csv")
+
 
 # 4. Exploración de la tabla de población
 table(pop$ENTIDAD)
 table(pop$CVE_GEO)
 table(pop$ANIO)
 
-names(pop)
-sum(pop$POBLACION)
+
 ```
 
-You can add options to executable code like this
+## Pirámide poblacional de Michoacán en 2026
 
-```{r}
-#| echo: false
-2 * 2
+Se ve una pirámide sana; base amplia y reducción gradual con la edad, lo que indica población todavía joven pero en transición. Se ve buen peso en edades productivas de 20–40. La ligera menor presencia de hombres en 20–30 podría asociarse a migración y/o efectos de inseguridad, como idea a analizar.
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+micho<- pop[ENTIDAD=="Michoacán" & ANIO=="2026", .(SEXO, EDAD, POBLACION)]
+
+micho_plot <- micho %>%
+  mutate(pob_plot = ifelse(SEXO == "Hombres", -POBLACION, POBLACION)) %>%
+  group_by(SEXO, EDAD) %>%
+  summarise(pob_plot = sum(pob_plot), .groups = "drop")
+
+
+# Grafica
+ggplot(micho_plot, aes(x = EDAD, y = pob_plot, fill = SEXO)) +
+  geom_col(width = 0.9) +
+  scale_fill_manual(values = c("Hombres" = "steelblue3",
+                               "Mujeres" = "deeppink2")) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark = ",",
+                                                 scientific = FALSE)) +
+  labs(
+    title = "Pirámide poblacional de Michoacán (2026)",
+    x = "Edad",
+    y = "Población",
+    fill = "Sexo"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))+
+  labs(caption = "Fuente: CONAPO, Estimaciones y Proyecciones a 
+       mitad de año, 1950–2070") +
+  theme(
+    plot.caption = element_text(size = 8, hjust = 1),
+    plot.caption.position = "plot"
+  ) + 
+  scale_x_continuous(breaks = seq(0, 110, 10))
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+## Pirámide poblacional de Michoacán en 2070
+
+En 2070 la forma cambia; la base ya no es amplia y la pirámide se vuelve más como un barril, señal de menos nacimientos y un envejecimiento mucho más marcado. Se ensanchan los grupos de 50–80 y el peso relativo de niños y jóvenes baja, lo que sugiere más dependencia por vejez. También se nota más la mayor presencia de mujeres en edades altas, consistente con mayor longevidad femenina.
+
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+micho<- pop[ENTIDAD=="Michoacán" & ANIO=="2070", .(SEXO, EDAD, POBLACION)]
+
+micho_plot <- micho %>%
+  mutate(pob_plot = ifelse(SEXO == "Hombres", -POBLACION, POBLACION)) %>%
+  group_by(SEXO, EDAD) %>%
+  summarise(pob_plot = sum(pob_plot), .groups = "drop")
+
+
+# Grafica
+ggplot(micho_plot, aes(x = EDAD, y = pob_plot, fill = SEXO)) +
+  geom_col(width = 0.9) +
+  scale_fill_manual(values = c("Hombres" = "steelblue3",
+                               "Mujeres" = "deeppink2")) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark = ",",
+                                                 scientific = FALSE)) +
+  labs(
+    title = "Pirámide poblacional de Michoacán (2070)",
+    x = "Edad",
+    y = "Población",
+    fill = "Sexo"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))+
+  labs(caption = "Fuente: CONAPO, Estimaciones y Proyecciones a 
+       mitad de año, 1950–2070") +
+  theme(
+    plot.caption = element_text(size = 8, hjust = 1),
+    plot.caption.position = "plot"
+  ) + 
+  scale_x_continuous(breaks = seq(0, 110, 10))
+```
